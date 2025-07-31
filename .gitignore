@@ -175,3 +175,4 @@ pyrightconfig.json
 # End of https://www.toptal.com/developers/gitignore/api/python
 sql_app.db
 __init__.py
+rss.txt
