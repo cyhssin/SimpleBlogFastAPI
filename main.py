@@ -83,3 +83,16 @@ def update_user_profile(
     if not updated_user:
         raise HTTPException(status_code=404, detail="User not found")
     return updated_user
+
+@app.delete("/users/{user_id}", status_code=204)
+def delete_user(user_id: int, db: Session = Depends(get_db)):
+    success = crud.delete_user(db, user_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+@app.patch("/users/{user_id}/deactivate", response_model=schemas.UserOut)
+def deactivate_user(user_id: int, db: Session = Depends(get_db)):
+    user = crud.deactivate_user(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
