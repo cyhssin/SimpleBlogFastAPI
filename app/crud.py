@@ -75,3 +75,15 @@ def delete_post(db: Session, post_id: int):
     db.delete(db_post)
     db.commit()
     return True
+
+def update_user(db: Session, user_id: int, user_update: schemas.UserUpdate):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        return None
+    if user_update.email:
+        user.email = user_update.email
+    if user_update.password:
+        user.hashed_password = pwd_context.hash(user_update.password)
+    db.commit()
+    db.refresh(user)
+    return user

@@ -72,3 +72,14 @@ async def update_post(
 async def delete_post(post_id: int, db: Session = Depends(get_db)):
     if not crud.delete_post(db=db, post_id=post_id):
         raise HTTPException(status_code=404, detail="Post not found")
+    
+@app.patch("/users/{user_id}", response_model=schemas.UserOut)
+def update_user_profile(
+    user_id: int,
+    user_update: schemas.UserUpdate,
+    db: Session = Depends(get_db)
+):
+    updated_user = crud.update_user(db, user_id, user_update)
+    if not updated_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return updated_user

@@ -36,3 +36,7 @@ class PostOut(PostBase):
     
     class Config:
         orm_mode = True
+
+class UserUpdate(BaseModel):
+    email: Optional[str] = None
+    password: Optional[str] = None
