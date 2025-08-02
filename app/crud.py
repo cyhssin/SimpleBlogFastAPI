@@ -18,7 +18,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     db_user = models.User(
         username=user.username,
         email=user.email,
-        hashed_password=hashed_password
+        hashed_password=hashed_password,
     )
     db.add(db_user)
     try:
@@ -60,12 +60,12 @@ def update_post(db: Session, post_id: int, post_update: schemas.PostUpdate):
     db_post = get_post(db, post_id)
     if not db_post:
         return None
-    
+
     update_data = post_update.model_dump(exclude_unset=True)
-    
+
     for field, value in update_data.items():
         setattr(db_post, field, value)
-    
+
     db.commit()
     db.refresh(db_post)
     return db_post
@@ -97,7 +97,7 @@ def delete_user(db: Session, user_id: int):
         return False
     db.delete(user)
     db.commit()
-    return True 
+    return True
 
 def deactivate_user(db: Session, user_id: int):
     user = db.query(models.User).filter(models.User.id == user_id).first()

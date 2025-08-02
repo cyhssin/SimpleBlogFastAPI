@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from app import schemas, crud
 from app.database import get_db, engine, Base
 from utils import send_verification_email
+from app.jwt_utils import create_access_token
 
 # Initialize tables when starting up
 Base.metadata.create_all(bind=engine)
@@ -56,9 +57,8 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     user = crud.authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    response = JSONResponse(content={"msg": "Login successful", "username": user.username})
-    response.set_cookie(key="session", value=user.username, httponly=True)
-    return response
+    access_token = create_access_token(data={"sub": user.username})
+    return {"access_token": access_token, "token_type": "bearer"}
 
 @app.post("/logout", tags=["user"])
 def logout():
@@ -71,7 +71,7 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
     success = crud.delete_user(db, user_id)
     if not success:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
 @app.patch("/users/{user_id}/deactivate", response_model=schemas.UserOut, tags=["user"])
 def deactivate_user(user_id: int, db: Session = Depends(get_db)):
     user = crud.deactivate_user(db, user_id)
@@ -101,7 +101,7 @@ async def get_post(post_id: int = Path(..., gt=0), db: Session = Depends(get_db)
 async def update_post(
     post_id: int,
     post_update: schemas.PostUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     updated_post = crud.update_post(db=db, post_id=post_id, post_update=post_update)
     if not updated_post:
@@ -112,12 +112,12 @@ async def update_post(
 async def delete_post(post_id: int, db: Session = Depends(get_db)):
     if not crud.delete_post(db=db, post_id=post_id):
         raise HTTPException(status_code=404, detail="Post not found")
-    
+
 @app.patch("/users/{user_id}", response_model=schemas.UserOut, tags=["blog"])
 def update_user_profile(
     user_id: int,
     user_update: schemas.UserUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     updated_user = crud.update_user(db, user_id, user_update)
     if not updated_user:

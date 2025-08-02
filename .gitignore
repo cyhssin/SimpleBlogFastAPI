@@ -176,3 +176,4 @@ pyrightconfig.json
 sql_app.db
 __init__.py
 rss.txt
+ruff.toml

@@ -8,9 +8,9 @@ load_dotenv()
 def send_verification_email(to_email, token):
     link = f"http://localhost:8000/verify-email?token={token}"
     msg = MIMEText(f"Click to verify your email: {link}")
-    msg['Subject'] = 'Verify your email'
-    msg['From'] = os.getenv("GMAIL_USER")
-    msg['To'] = to_email
+    msg["Subject"] = "Verify your email"
+    msg["From"] = os.getenv("GMAIL_USER")
+    msg["To"] = to_email
 
     smtp_server = os.getenv("SMTP_SERVER")
     smtp_port = 587

@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from typing import Optional
 
 class UserBase(BaseModel):
     username: str
@@ -27,16 +26,16 @@ class PostCreate(PostBase):
     pass
 
 class PostUpdate(BaseModel):
-    title: Optional[str] = None
-    content: Optional[str] = None
-    is_published: Optional[bool] = None
+    title: str | None = None
+    content: str | None = None
+    is_published: bool | None = None
 
 class PostOut(PostBase):
     id: int
-    
+
     class Config:
         orm_mode = True
 
 class UserUpdate(BaseModel):
-    email: Optional[str] = None
-    password: Optional[str] = None
+    email: str | None = None
+    password: str | None = None
