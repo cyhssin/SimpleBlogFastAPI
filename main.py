@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 
 from app import schemas, crud
 from app.database import get_db, engine, Base
+from utils import send_verification_email
 
 # Initialize tables when starting up
 Base.metadata.create_all(bind=engine)
@@ -34,7 +35,21 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     new_user = crud.create_user(db, user)
     if not new_user:
         raise HTTPException(status_code=400, detail="User creation failed")
+    token = crud.generate_email_verification_token(new_user.email)
+    send_verification_email(new_user.email, token)
     return new_user
+
+@app.get("/verify-email")
+def verify_email(token: str, db: Session = Depends(get_db)):
+    email = crud.verify_email_verification_token(token)
+    if not email:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+    user = crud.get_user_by_email(db, email)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.is_email_verified = True
+    db.commit()
+    return {"msg": "Email verified successfully"}
 
 @app.post("/login", tags=["user"])
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):

@@ -1,8 +1,9 @@
 from sqlalchemy.orm import Session
-from . import models, schemas
-
 from sqlalchemy.exc import IntegrityError
 from passlib.context import CryptContext
+from itsdangerous import URLSafeTimedSerializer
+
+from . import models, schemas
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -33,6 +34,8 @@ def authenticate_user(db: Session, username: str, password: str):
     if not user:
         return None
     if not pwd_context.verify(password, user.hashed_password):
+        return None
+    if not user.is_email_verified:
         return None
     return user
 
@@ -104,3 +107,16 @@ def deactivate_user(db: Session, user_id: int):
     db.commit()
     db.refresh(user)
     return user
+
+SECRET_KEY = "JQCE21A8X54ipqmYxWUbEw"
+serializer = URLSafeTimedSerializer(SECRET_KEY)
+
+def generate_email_verification_token(email: str):
+    return serializer.dumps(email, salt="email-verification")
+
+def verify_email_verification_token(token: str, expiration: int = 3600):
+    try:
+        email = serializer.loads(token, salt="email-verification", max_age=3600)
+    except Exception:
+        return None
+    return email
