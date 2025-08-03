@@ -80,28 +80,28 @@ def deactivate_user(user_id: int, db: Session = Depends(get_db)):
     return user
 
 @app.get("/", response_model=list[schemas.PostOut], tags=["blog"])
-async def get_all_posts(db: Session = Depends(get_db)):
+def get_all_posts(db: Session = Depends(get_db)):
     return crud.get_all_posts(db=db)
 
 @app.post("/posts", response_model=schemas.PostOut, status_code=status.HTTP_201_CREATED, tags=["blog"])
-async def create_post(post: schemas.PostCreate, db: Session = Depends(get_db)):
+def create_post(post: schemas.PostCreate, db: Session = Depends(get_db)):
     new_post = crud.create_post(db=db, post=post)
     if not new_post:
         raise HTTPException(status_code=400, detail="Post creation failed")
     return new_post
 
 @app.get("/posts/{post_id}", response_model=schemas.PostOut, tags=["blog"])
-async def get_post(post_id: int = Path(..., gt=0), db: Session = Depends(get_db)):
+def get_post(post_id: int = Path(..., gt=0), db: Session = Depends(get_db)):
     post = crud.get_post(db=db, post_id=post_id)
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
     return post
 
 @app.patch("/posts/{post_id}", response_model=schemas.PostOut, tags=["blog"])
-async def update_post(
+def update_post(
     post_id: int,
     post_update: schemas.PostUpdate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db)
 ):
     updated_post = crud.update_post(db=db, post_id=post_id, post_update=post_update)
     if not updated_post:
@@ -109,7 +109,7 @@ async def update_post(
     return updated_post
 
 @app.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["blog"])
-async def delete_post(post_id: int, db: Session = Depends(get_db)):
+def delete_post(post_id: int, db: Session = Depends(get_db)):
     if not crud.delete_post(db=db, post_id=post_id):
         raise HTTPException(status_code=404, detail="Post not found")
 
