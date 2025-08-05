@@ -1,3 +1,5 @@
+from fastapi.security import OAuth2PasswordBearer
+from app.jwt_utils import verify_access_token
 from fastapi import FastAPI, Depends, status, HTTPException, Path
 from sqlalchemy.orm import Session
 from fastapi import Request
@@ -13,8 +15,23 @@ from app.jwt_utils import create_access_token
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Blog API")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
-# Get current user profile endpoint
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    username = verify_access_token(token)
+    if not username:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    user = crud.get_user_by_username(db, username)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+@app.get("/users", response_model=list[schemas.UserOut], tags=["user"])
+def list_all_users(current_user: schemas.UserOut = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not getattr(current_user, "is_admin", False):
+        raise HTTPException(status_code=403, detail="Admins only")
+    return crud.get_all_users(db)
+
 @app.get("/profile", response_model=schemas.UserOut, tags=["user"])
 def get_current_user_profile(request: Request, db: Session = Depends(get_db)):
     username = request.cookies.get("session")
@@ -79,6 +96,19 @@ def deactivate_user(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
+@app.post("/users/change-password", tags=["user"])
+def change_password(
+    req: schemas.PasswordChangeRequest,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    user = crud.get_user_by_username(db, current_user.username)
+    if not user or not crud.pwd_context.verify(req.old_password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Old password is incorrect")
+    user.hashed_password = crud.pwd_context.hash(req.new_password)
+    db.commit()
+    return {"msg": "Password changed successfully"}
+
 @app.get("/", response_model=list[schemas.PostOut], tags=["blog"])
 def get_all_posts(db: Session = Depends(get_db)):
     return crud.get_all_posts(db=db)
@@ -101,7 +131,7 @@ def get_post(post_id: int = Path(..., gt=0), db: Session = Depends(get_db)):
 def update_post(
     post_id: int,
     post_update: schemas.PostUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     updated_post = crud.update_post(db=db, post_id=post_id, post_update=post_update)
     if not updated_post:

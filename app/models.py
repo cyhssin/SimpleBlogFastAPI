@@ -9,6 +9,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
     is_email_verified = Column(Boolean, default=False)
+    is_admin = Column(Boolean, default=False)
 
 class Post(Base):
     __tablename__ = "posts"

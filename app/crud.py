@@ -1,3 +1,4 @@
+import os
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from passlib.context import CryptContext
@@ -24,10 +25,11 @@ def create_user(db: Session, user: schemas.UserCreate):
     try:
         db.commit()
         db.refresh(db_user)
-        return db_user
     except IntegrityError:
         db.rollback()
         return None
+    else:
+        return db_user
 
 def authenticate_user(db: Session, username: str, password: str):
     user = get_user_by_username(db, username)
@@ -38,6 +40,9 @@ def authenticate_user(db: Session, username: str, password: str):
     if not user.is_email_verified:
         return None
     return user
+
+def get_all_users(db: Session):
+    return db.query(models.User).all()
 
 def get_all_posts(db: Session, skip: int = 0, limit: int = 100):
     """ Get all posts with pagination """
@@ -108,7 +113,7 @@ def deactivate_user(db: Session, user_id: int):
     db.refresh(user)
     return user
 
-SECRET_KEY = "JQCE21A8X54ipqmYxWUbEw"
+SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key")
 serializer = URLSafeTimedSerializer(SECRET_KEY)
 
 def generate_email_verification_token(email: str):
